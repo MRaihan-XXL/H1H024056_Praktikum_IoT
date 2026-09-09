@@ -1,111 +1,181 @@
-<h2>Modul Perulangan dan Percabangan</h2>
+<h2>Modul Sensor dan Aktuator</h2>
 
-## 1.5.4 Percobaan 1A: Percabangan
+## 1.5.4 Percobaan 1A: Sensor
 
-1. Pada kondisi apa program masuk ke blok if?
+1. Gambarkan diagram alur (flowchart) proses akuisisi data sensor DHT22 pada program di atas!
 
-   > Program masuk ke blok `if` ketika nilai variabel `timeDelay <= 100`.
+![diagram flow](jawaban_soal-1A.png)
 
-2. Pada kondisi apa program masuk ke blok else?
+2. Apa fungsi dari perintah isnan() pada program tersebut?
 
-   > Program masuk ke blok `else` ketika `timeDelay > 100`. 
+   > Perintah isnan() bertugas mendeteksi apakah output dari sensor berupa angka valid atau berstatus Not a Number (NaN). Output NaN biasanya didapatkan apabila proses akuisisi data gagal akibat koneksi kabel yang tidak sempurna, sensor yang belum responsif, atau masalah yang lainnya.
 
-3. Apa fungsi dari perintah delay(timeDelay)?
+3. Jelaskan mengapa diperlukan jeda (delay) minimal sekitar 2 detik antar pembacaan sensor DHT22!
 
-   > `delay(timeDelay)` berfungsi menunda eksekusi program selama `timeDelay` milidetik. `delay` secara langsung menentukan kecepatan kedipan LED. Semakin kecil nilai `timeDelay`, semakin cepat LED berkedip, dan sebaliknya.
+   > Jeda waktu tersebut sangat dibutuhkan dikarenakan menyelesaikan transmisi melalui kabel tunggal (single-wire). Jika sensor dipaksa melakukan pembacaan sensor dengan frekuensi yang lebih cepat dari sensornya, maka pengiriman data akan terganggu sehingga menghasilkan pengukuran yang tidak presisi ataupun akurat..
 
-4. Jika program yang dibuat memiliki alur mati → lambat → cepat → reset (mati),
-ubah menjadi LED tidak langsung reset → tetapi berubah dari cepat → sedang →
-mati dan berikan penjelasan disetiap baris kode nya dalam bentuk README.md!
+4.  Modifikasi program agar data suhu dan kelembaban dirata-ratakan dari 5 kali pembacaan sebelum ditampilkan, dan berikan penjelasan di setiap baris kode yang ditambahkan dalam bentuk README.md!
 
    ```c++
-   // Modifikasi Percobaan 1A: LED cepat -> sedang -> mati
-   const int ledPin = 6;        // LED terhubung ke pin digital 6
-   int timeDelay = 1000;        // waktu delay awal (lambat)
-   int arah = -1;               // -1 = percepat, 1 = perlambat
-   
-   void setup() {
-       pinMode(ledPin, OUTPUT); // set pin 6 sebagai output
-   }
+   // ================================================================// MODIFIKASI SOAL 4.a: Rata-rata 5 kali pembacaan sensor DHT11// ================================================================
 
-   void loop() {
-       digitalWrite(ledPin, HIGH);  // nyalakan LED
-       delay(timeDelay);            // tahan sesuai timeDelay
-       digitalWrite(ledPin, LOW);   // matikan LED
-       delay(timeDelay);            // tahan sesuai timeDelay
+    #include <DHT.h>
 
-       // Jika kecepatan sudah mencapai batas cepat (delay <= 100)
-       if (timeDelay <= 100) {
-           arah = 1;                // ubah arah menjadi perlambat
-       }
-       // Jika kecepatan sudah mencapai batas lambat (delay >= 1000)
-       else if (timeDelay >= 1000) {
-           arah = -1;               // ubah arah menjadi percepat
-       }
-   
-       // Ubah timeDelay: percepat jika arah=-1, perlambat jika arah=1
-       timeDelay += arah * 100;
+    // ===================== KONFIGURASI PIN =====================
+    #define DHTPIN 4       // pin data DHT11 terhubung ke GPIO 4
+    #define DHTTYPE DHT11  // tipe sensor yang digunakan
 
-       // Jika delay mencapai 1000 dan sedang dalam mode perlambat (arah=1)
-       if (timeDelay == 1000 && arah == 1) {
-           digitalWrite(ledPin, LOW);  // pastikan LED mati
-           delay(3000);                // mati total selama 3 detik
-           timeDelay = 1000;           // reset ke delay awal
-           arah = -1;                  // reset arah ke percepatan
-      }
+    // ===================== INISIALISASI OBJEK =====================
+    DHT dht(DHTPIN, DHTTYPE);
+
+    // ===================== VARIABEL UNTUK RATA-RATA =====================
+    const int jumlahBaca = 5;        // jumlah pembacaan yang akan dirata-rata
+    float totalSuhu = 0;            // penampung total nilai suhu
+    float totalKelembaban = 0;      // penampung total nilai kelembaban
+    int hitungBaca = 0;             // counter jumlah pembacaan yang sudah dilakukan
+
+    // ===================== SETUP =====================
+    void setup() {
+    Serial.begin(115200);         // mulai komunikasi serial
+    dht.begin();                  // inisialisasi sensor DHT11
+    Serial.println("Memulai akuisisi data sensor DHT11 dengan rata-rata 5x...");
+    }
+
+    // ===================== LOOP =====================
+    void loop() {
+    // Membaca data kelembaban dan suhu dari sensor
+    float kelembaban = dht.readHumidity();
+    float suhu = dht.readTemperature();
+
+    // Periksa apakah pembacaan berhasil (bukan NaN)
+    if (isnan(kelembaban) || isnan(suhu)) {
+        Serial.println("Gagal membaca data dari sensor DHT11! Lewati pembacaan ini.");
+    } else {
+        // Jika pembacaan valid, tambahkan ke total untuk dirata-rata
+        totalSuhu += suhu;           // akumulasi nilai suhu
+        totalKelembaban += kelembaban; // akumulasi nilai kelembaban
+        hitungBaca++;               // increment counter pembacaan
+
+        // Cek apakah sudah mencapai 5 kali pembacaan
+        if (hitungBaca >= jumlahBaca) {
+        // Hitung nilai rata-rata
+        float rataSuhu = totalSuhu / jumlahBaca;
+        float rataKelembaban = totalKelembaban / jumlahBaca;
+
+        // Tampilkan hasil rata-rata ke Serial Monitor
+        Serial.print("Rata-rata Suhu: ");
+        Serial.print(rataSuhu);
+        Serial.print(" °C, Rata-rata Kelembaban: ");
+        Serial.print(rataKelembaban);
+        Serial.println(" %");
+
+        // Reset total dan counter untuk siklus berikutnya
+        totalSuhu = 0;
+        totalKelembaban = 0;
+        hitungBaca = 0;
+        }
+    }
+
+    delay(2000); // jeda pembacaan setiap 2 detik (sesuai spesifikasi DHT11)
     }
    ```
 
-## 1.6.4 Percobaan 2A: Perulangan
+## 1.6.4 Percobaan 2A: Aktuator
 
-1. Gambarkan rangkaian schematic 5 LED running yang digunakan pada percobaan!
+1. Mengapa diperlukan nilai ambang batas (threshold) dalam sistem kendali aktuator berbasis sensor?
 
-![Skematik](Skematik.png)
+   > Jika tidak menggunakan nilai ambang batas tersebut, maka mikrokontroler tidak memiliki panduan untuk aktuatornya, sehingga sistemnya akan mengalami kegagalan untuk merespons perubahan kondisi lingkungan secara otomatis.
 
-2. Jelaskan bagaimana program membuat efek LED berjalan dari kiri ke kanan!
+2. Jelaskan apa yang akan terjadi apabila nilai suhuThreshold diturunkan menjadi sangat rendah, misalnya 20.0!
 
-   > Perulangan `for` pertama melakukan iterasi dari pin 2 hingga pin 7 (nilai pin bertambah). Pada setiap iterasi, LED dinyalakan, ditunda, lalu dimatikan sebelum berpindah ke pin berikutnya. Proses berurutan ini menciptakan ilusi titik cahaya bergerak dari kiri ke kanan. Tidak ada LED yang menyala bersamaan, sehingga efek pergerakan terlihat jelas.
+   > Aktuator akan terus-menerus menyala (ON) non-stop meskipun lingkungannya. Jika itu terjadi, sistem kehilangan fungsi utamanya sebagai kendali otomatis.
 
-3. Jelaskan bagaimana program membuat LED kembali dari kanan ke kiri!
+3. Apa perbedaan antara kendali aktuator secara terus-menerus (kondisi tunggal) dengan kendali menggunakan histerisis (dua ambang batas)?
 
-   > Perulangan `for` kedua melakukan iterasi dari pin 7 turun ke pin 2 (nilai pin berkurang). Setiap LED dinyalakan, ditunda, lalu dimatikan secara berurutan dari kanan ke kiri. Efek yang dihasilkan adalah titik cahaya bergerak kembali dari kanan ke kiri. Kedua perulangan bergantian dalam fungsi `loop()` menghasilkan gerakan bolak-balik terus-menerus.
+   > Kendali kondisi tunggal hanya memakai satu referensi, sehingga lebih rawan terhadap siklus nyala-mati dengan cepat (flickering), yang dapat merusak relay. Sedangkan sistem histeresis menerapkan dua batas (atas dan bawah) referensi dan dapat mengingat status aktuator sebelumnya, sehingga jauh lebih stabil untuk suhunya.
 
-4. Buatkan program agar LED menyala tiga LED kanan dan tiga LED kiri secara bergantian
+4. Modifikasi program agar menggunakan dua ambang batas (histerisis), misalnya aktuator menyala pada suhu di atas 30°C dan baru mati pada suhu di bawah 28°C, dan berikan penjelasan di setiap baris kode nya dalam bentuk README.md!
 
    ```c++
-   // Program LED: 3 kiri dan 3 kanan bergantian
-   int timer = 200;   // jeda perpindahan grup (ms)
-   
-   void setup() {
-       // Inisialisasi semua pin 2-7 sebagai OUTPUT
-       for (int i = 2; i < 8; i++) {
-           pinMode(i, OUTPUT);
-       }
-   }
-   
-   void loop() {
-       // --- Grup Kiri (pin 2,3,4) menyala ---
-       // Matikan semua LED terlebih dahulu (bersihkan kondisi)
-       for (int i = 2; i < 8; i++) {
-           digitalWrite(i, LOW);
-       }
-       // Nyalakan 3 LED kiri (pin 2,3,4) bersamaan
-       for (int i = 2; i <= 4; i++) {
-           digitalWrite(i, HIGH);
-       }
-       delay(timer);   // tahan selama timer ms
-   
-       // --- Grup Kanan (pin 5,6,7) menyala ---
-       // Matikan semua LED lagi
-       for (int i = 2; i < 8; i++) {
-           digitalWrite(i, LOW);
-       }
-       // Nyalakan 3 LED kanan (pin 5,6,7) bersamaan
-       for (int i = 5; i <= 7; i++) {
-           digitalWrite(i, HIGH);
-       }
-       delay(timer);   // tahan selama timer ms
-   }
+    // ================================================================
+    // MODIFIKASI SOAL 4.b: Histerisis dengan dua ambang batas
+    // Aktuator ON jika suhu > 30°C, OFF jika suhu < 28°C
+    // ================================================================
+
+    #include <DHT.h>
+
+    // ===================== KONFIGURASI PIN =====================
+    #define DHTPIN 4       // pin data DHT11 terhubung ke GPIO 4
+    #define DHTTYPE DHT11  // tipe sensor yang digunakan
+    #define RELAYPIN 5     // pin kendali relay/LED indikator
+
+    // ===================== INISIALISASI OBJEK =====================
+    DHT dht(DHTPIN, DHTTYPE);
+
+    // ===================== KONFIGURASI AMBANG BATAS (HISTERISIS) =====================
+    const float suhuOn = 30.0;   // suhu untuk menyalakan aktuator (°C)
+    const float suhuOff = 28.0;  // suhu untuk mematikan aktuator (°C)
+
+    // ===================== VARIABEL STATUS =====================
+    bool relayState = false;     // status relay saat ini (false = OFF, true = ON)
+
+    // ===================== SETUP =====================
+    void setup() {
+    Serial.begin(115200);             // mulai komunikasi serial
+    dht.begin();                      // inisialisasi sensor DHT11
+
+    pinMode(RELAYPIN, OUTPUT);        // atur pin relay sebagai output
+    digitalWrite(RELAYPIN, LOW);      // pastikan relay mati di awal
+
+    Serial.println("Memulai kendali aktuator dengan histerisis...");
+    Serial.print("Aktuator ON jika suhu > ");
+    Serial.print(suhuOn);
+    Serial.print(" °C, OFF jika suhu < ");
+    Serial.print(suhuOff);
+    Serial.println(" °C");
+    }
+
+    // ===================== LOOP =====================
+    void loop() {
+    // Membaca data suhu dari sensor
+    float suhu = dht.readTemperature();
+
+    // Periksa apakah pembacaan berhasil
+    if (isnan(suhu)) {
+        Serial.println("Gagal membaca data sensor!");
+    } else {
+        // Tampilkan suhu yang terbaca
+        Serial.print("Suhu: ");
+        Serial.print(suhu);
+        Serial.print(" °C -> ");
+
+        // ===================== LOGIKA KENDALI AKTUATOR =====================
+        // Cek kondisi berdasarkan status relay saat ini
+        if (relayState == true) {
+        // Jika relay sedang ON, cek apakah suhu turun di bawah suhuOff
+        if (suhu < suhuOff) {
+            digitalWrite(RELAYPIN, LOW);  // matikan relay
+            relayState = false;            // update status relay
+            Serial.println("Aktuator: OFF (suhu turun di bawah 28°C)");
+        } else {
+            // Suhu masih di atas suhuOff, relay tetap ON
+            Serial.println("Aktuator: ON (tetap)");
+        }
+        } else {
+        // Jika relay sedang OFF, cek apakah suhu naik di atas suhuOn
+        if (suhu > suhuOn) {
+            digitalWrite(RELAYPIN, HIGH); // nyalakan relay
+            relayState = true;             // update status relay
+            Serial.println("Aktuator: ON (suhu naik di atas 30°C)");
+        } else {
+            // Suhu masih di bawah suhuOn, relay tetap OFF
+            Serial.println("Aktuator: OFF (tetap)");
+        }
+        }
+    }
+
+    delay(2000); // jeda pembacaan setiap 2 detik
+    }
    ```
 
 <h2></h2>
