@@ -16,7 +16,7 @@
 
 4. Modifikasi program agar ESP32 mencoba menghubungkan ulang (reconnect) secara otomatis apabila koneksi WiFi terputus, dan berikan penjelasan di setiap baris kode yang ditambahkan dalam bentuk README.md!
 
-   ```c++
+ ```c++
   #include <ESP8266WiFi.h>
 
   const char* sta_ssid = "NAMA_WIFI_RUMAH";
@@ -65,7 +65,33 @@
 
 2. Apa perbedaan mendasar antara mode Station dan mode Access Point pada ESP32?
 
-<table> <thead> <tr> <th>Aspek</th> <th>Station (STA)</th> <th>Access Point (AP)</th> </tr> </thead> <tbody> <tr> <td><strong>Peran</strong></td> <td>Klien</td> <td>Penyedia jaringan</td> </tr> <tr> <td><strong>Koneksi Internet</strong></td> <td>Ya (via router)</td> <td>Tidak (kecuali ada routing)</td> </tr> <tr> <td><strong>Perangkat Lain</strong></td> <td>Tidak bisa terhubung langsung</td> <td>Bisa terhubung langsung ke ESP32</td> </tr> <tr> <td><strong>Penggunaan</strong></td> <td>Akses internet, komunikasi server</td> <td>Konfigurasi awal, kontrol lokal</td> </tr> <tr> <td><strong>IP Address</strong></td> <td>Dari router (DHCP)</td> <td>Default 192.168.4.1</td> </tr> </tbody> </table>
+<table> 
+  <thead> 
+    <tr> 
+      <th>Aspek</th> 
+      <th>Station (STA)</th> 
+      <th>Access Point (AP)</th> 
+    </tr> 
+  </thead> 
+  <tbody> 
+    <tr> 
+      <td><strong>Peran</strong></td> 
+      <td>Klien</td> 
+      <td>Penyedia jaringan</td> 
+    </tr> 
+    <tr> 
+      <td><strong>Koneksi Internet</strong></td> <td>Ya (via router)</td> 
+      <td>Tidak (kecuali ada routing)</td> 
+    </tr> 
+    <tr> 
+      <td><strong>Perangkat Lain</strong></td>     <td>Tidak bisa terhubung langsung</td> <td>Bisa terhubung langsung ke ESP32</td> 
+    </tr> 
+    <tr> 
+      <td><strong>Penggunaan</strong></td> 
+      <td>Akses internet, komunikasi server</td> <td>Konfigurasi awal, kontrol lokal</td> </tr> <tr> <td><strong>IP Address</strong></td> <td>Dari router (DHCP)</td> <td>Default 192.168.4.1</td> 
+    </tr> 
+  </tbody> 
+</table>
 
 3. Jelaskan risiko keamanan apabila password Access Point tidak diberikan atau terlalu 
 sederhana!
