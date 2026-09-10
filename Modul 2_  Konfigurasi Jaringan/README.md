@@ -106,42 +106,42 @@ sederhana!
 kode nya dalam bentuk README.md!
 
    ```c++
-  #include <ESP8266WiFi.h>
+    #include <ESP8266WiFi.h>
 
-  const char* sta_ssid = "NAMA_WIFI_RUMAH";
-  const char* sta_password = "PASSWORD_WIFI";
-  const char* ap_ssid = "ESP32_AP";
-  const char* ap_password = "12345678";
+    const char* sta_ssid = "NAMA_WIFI_RUMAH";
+    const char* sta_password = "PASSWORD_WIFI";
+    const char* ap_ssid = "ESP32_AP";
+    const char* ap_password = "12345678";
 
-  void setup() {
-    Serial.begin(115200);
+    void setup() {
+      Serial.begin(115200);
 
-    // Set mode AP+STA
-    WiFi.mode(WIFI_AP_STA);
+      // Set mode AP+STA
+      WiFi.mode(WIFI_AP_STA);
 
-    // Konfigurasi Access Point
-    WiFi.softAP(ap_ssid, ap_password);
-    Serial.print("AP IP: ");
-    Serial.println(WiFi.softAPIP());
+      // Konfigurasi Access Point
+      WiFi.softAP(ap_ssid, ap_password);
+      Serial.print("AP IP: ");
+      Serial.println(WiFi.softAPIP());
 
-    // Konfigurasi Station (terhubung ke WiFi rumah)
-    WiFi.begin(sta_ssid, sta_password);
-    Serial.print("Menghubungkan ke WiFi rumah");
-    while (WiFi.status() != WL_CONNECTED) {
-      delay(500);
-      Serial.print(".");
+      // Konfigurasi Station (terhubung ke WiFi rumah)
+      WiFi.begin(sta_ssid, sta_password);
+      Serial.print("Menghubungkan ke WiFi rumah");
+      while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+      }
+      Serial.println("\nTerhubung ke WiFi rumah!");
+      Serial.print("STA IP: ");
+      Serial.println(WiFi.localIP());
     }
-    Serial.println("\nTerhubung ke WiFi rumah!");
-    Serial.print("STA IP: ");
-    Serial.println(WiFi.localIP());
-  }
 
-  void loop() {
-    // Tampilkan jumlah client AP dan status STA
-    Serial.print("Client AP: ");
-    Serial.print(WiFi.softAPgetStationNum());
-    Serial.print(" | STA Status: ");
-    Serial.println(WiFi.status() == WL_CONNECTED ? "Terhubung" : "Terputus");
-    delay(5000);
-  }
+    void loop() {
+      // Tampilkan jumlah client AP dan status STA
+      Serial.print("Client AP: ");
+      Serial.print(WiFi.softAPgetStationNum());
+      Serial.print(" | STA Status: ");
+      Serial.println(WiFi.status() == WL_CONNECTED ? "Terhubung" : "Terputus");
+      delay(5000);
+    }
    ```
