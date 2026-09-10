@@ -4,7 +4,7 @@
 
 1. Gambarkan diagram alur (flowchart) proses akuisisi data sensor DHT22 pada program di atas!
 
-![diagram flow](jawaban_soal-1A.png)
+![alt text](flowchart_1A.png)
 
 2. Apa fungsi dari perintah isnan() pada program tersebut?
 
@@ -80,7 +80,7 @@
     }
    ```
 
-## 1.6.4 Percobaan 2A: Aktuator
+## 1.6.4 Percobaan 1B: Aktuator
 
 1. Mengapa diperlukan nilai ambang batas (threshold) dalam sistem kendali aktuator berbasis sensor?
 
