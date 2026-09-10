@@ -17,42 +17,52 @@
 4. Modifikasi program agar ESP32 mencoba menghubungkan ulang (reconnect) secara otomatis apabila koneksi WiFi terputus, dan berikan penjelasan di setiap baris kode yang ditambahkan dalam bentuk README.md!
 
  ```c++
-  #include <ESP8266WiFi.h>
+  #include <WiFi.h>
 
-  const char* sta_ssid = "NAMA_WIFI_RUMAH";
-  const char* sta_password = "PASSWORD_WIFI";
-  const char* ap_ssid = "ESP32_AP";
-  const char* ap_password = "12345678";
+  const char* ssid = "NAMA_WIFI_ANDA";
+  const char* password = "PASSWORD_WIFI_ANDA";
+  const int ledPin = 2;
 
   void setup() {
     Serial.begin(115200);
-
-    // Set mode AP+STA
-    WiFi.mode(WIFI_AP_STA);
-
-    // Konfigurasi Access Point
-    WiFi.softAP(ap_ssid, ap_password);
-    Serial.print("AP IP: ");
-    Serial.println(WiFi.softAPIP());
-
-    // Konfigurasi Station (terhubung ke WiFi rumah)
-    WiFi.begin(sta_ssid, sta_password);
-    Serial.print("Menghubungkan ke WiFi rumah");
+    pinMode(ledPin, OUTPUT);
+    digitalWrite(ledPin, LOW);
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, password);
+    Serial.print("Menghubungkan ke WiFi");
     while (WiFi.status() != WL_CONNECTED) {
       delay(500);
       Serial.print(".");
     }
-    Serial.println("\nTerhubung ke WiFi rumah!");
-    Serial.print("STA IP: ");
+    Serial.println("\nWiFi berhasil terhubung!");
+    Serial.print("IP Address : ");
     Serial.println(WiFi.localIP());
+    digitalWrite(ledPin, HIGH);
   }
 
   void loop() {
-    // Tampilkan jumlah client AP dan status STA
-    Serial.print("Client AP: ");
-    Serial.print(WiFi.softAPgetStationNum());
-    Serial.print(" | STA Status: ");
-    Serial.println(WiFi.status() == WL_CONNECTED ? "Terhubung" : "Terputus");
+    // Cek koneksi; jika terputus, coba reconnect otomatis
+    if (WiFi.status() != WL_CONNECTED) {
+      Serial.println("Koneksi terputus. Mencoba menghubungkan ulang...");
+      digitalWrite(ledPin, LOW);
+      WiFi.disconnect();
+      WiFi.begin(ssid, password);
+      unsigned long startAttempt = millis();
+      while (WiFi.status() != WL_CONNECTED && millis() - startAttempt < 10000) {
+        delay(500);
+        Serial.print(".");
+      }
+      if (WiFi.status() == WL_CONNECTED) {
+        Serial.println("\nBerhasil terhubung kembali!");
+        Serial.print("IP Address : ");
+        Serial.println(WiFi.localIP());
+        digitalWrite(ledPin, HIGH);
+      } else {
+        Serial.println("\nGagal reconnect. Akan coba lagi nanti.");
+      }
+    } else {
+      Serial.println("Status: Terhubung");
+    }
     delay(5000);
   }
    ```
@@ -106,30 +116,30 @@ sederhana!
 kode nya dalam bentuk README.md!
 
    ```c++
-    #include <ESP8266WiFi.h>
+  #include <ESP8266WiFi.h>
 
-    const char* sta_ssid = "NAMA_WIFI_RUMAH";
-    const char* sta_password = "PASSWORD_WIFI";
-    const char* ap_ssid = "ESP32_AP";
-    const char* ap_password = "12345678";
+  const char* sta_ssid = "NAMA_WIFI_RUMAH";
+  const char* sta_password = "PASSWORD_WIFI";
+  const char* ap_ssid = "ESP32_AP";
+  const char* ap_password = "12345678";
 
-    void setup() {
-      Serial.begin(115200);
+  void setup() {
+    Serial.begin(115200);
 
-      // Set mode AP+STA
-      WiFi.mode(WIFI_AP_STA);
+  // Set mode AP+STA
+  WiFi.mode(WIFI_AP_STA);
 
-      // Konfigurasi Access Point
-      WiFi.softAP(ap_ssid, ap_password);
-      Serial.print("AP IP: ");
-      Serial.println(WiFi.softAPIP());
+  // Konfigurasi Access Point
+  WiFi.softAP(ap_ssid, ap_password);
+  Serial.print("AP IP: ");
+  Serial.println(WiFi.softAPIP());
 
-      // Konfigurasi Station (terhubung ke WiFi rumah)
-      WiFi.begin(sta_ssid, sta_password);
-      Serial.print("Menghubungkan ke WiFi rumah");
-      while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
+    // Konfigurasi Station (terhubung ke WiFi rumah)
+    WiFi.begin(sta_ssid, sta_password);
+    Serial.print("Menghubungkan ke WiFi rumah");
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(500);
+      Serial.print(".");
       }
       Serial.println("\nTerhubung ke WiFi rumah!");
       Serial.print("STA IP: ");
