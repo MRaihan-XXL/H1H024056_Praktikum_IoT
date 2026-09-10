@@ -115,7 +115,7 @@ sederhana!
 4. Modifikasi program agar ESP32 berjalan pada mode AP+STA (terhubung ke WiFi rumah sekaligus menyediakan Access Point), dan berikan penjelasan di setiap baris 
 kode nya dalam bentuk README.md!
 
-   ```c++
+ ```c++
   #include <ESP8266WiFi.h>
 
   const char* sta_ssid = "NAMA_WIFI_RUMAH";
@@ -126,13 +126,13 @@ kode nya dalam bentuk README.md!
   void setup() {
     Serial.begin(115200);
 
-  // Set mode AP+STA
-  WiFi.mode(WIFI_AP_STA);
+    // Set mode AP+STA
+    WiFi.mode(WIFI_AP_STA);
 
-  // Konfigurasi Access Point
-  WiFi.softAP(ap_ssid, ap_password);
-  Serial.print("AP IP: ");
-  Serial.println(WiFi.softAPIP());
+    // Konfigurasi Access Point
+    WiFi.softAP(ap_ssid, ap_password);
+    Serial.print("AP IP: ");
+    Serial.println(WiFi.softAPIP());
 
     // Konfigurasi Station (terhubung ke WiFi rumah)
     WiFi.begin(sta_ssid, sta_password);
@@ -140,18 +140,18 @@ kode nya dalam bentuk README.md!
     while (WiFi.status() != WL_CONNECTED) {
       delay(500);
       Serial.print(".");
-      }
-      Serial.println("\nTerhubung ke WiFi rumah!");
-      Serial.print("STA IP: ");
-      Serial.println(WiFi.localIP());
     }
+    Serial.println("\nTerhubung ke WiFi rumah!");
+    Serial.print("STA IP: ");
+    Serial.println(WiFi.localIP());
+  }
 
-    void loop() {
-      // Tampilkan jumlah client AP dan status STA
-      Serial.print("Client AP: ");
-      Serial.print(WiFi.softAPgetStationNum());
-      Serial.print(" | STA Status: ");
-      Serial.println(WiFi.status() == WL_CONNECTED ? "Terhubung" : "Terputus");
-      delay(5000);
-    }
+  void loop() {
+    // Tampilkan jumlah client AP dan status STA
+    Serial.print("Client AP: ");
+    Serial.print(WiFi.softAPgetStationNum());
+    Serial.print(" | STA Status: ");
+    Serial.println(WiFi.status() == WL_CONNECTED ? "Terhubung" : "Terputus");
+    delay(5000);
+  }
    ```
