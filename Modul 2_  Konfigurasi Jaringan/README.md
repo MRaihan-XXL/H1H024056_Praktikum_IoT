@@ -65,13 +65,7 @@
 
 2. Apa perbedaan mendasar antara mode Station dan mode Access Point pada ESP32?
 
-   > | Aspek               | Station (STA)                          | Access Point (AP)                     |
-|---------------------|----------------------------------------|---------------------------------------|
-| Peran               | Klien                                  | Penyedia jaringan                     |
-| Koneksi internet    | Ya (via router)                        | Tidak (kecuali ada routing)           |
-| Perangkat lain      | Tidak bisa terhubung langsung          | Bisa terhubung langsung ke ESP32      |
-| Penggunaan          | Akses internet, komunikasi server      | Konfigurasi awal, kontrol lokal       |
-| IP Address          | Dari router (DHCP)                     | Default 192.168.4.1                   |
+<table> <thead> <tr> <th>Aspek</th> <th>Station (STA)</th> <th>Access Point (AP)</th> </tr> </thead> <tbody> <tr> <td><strong>Peran</strong></td> <td>Klien</td> <td>Penyedia jaringan</td> </tr> <tr> <td><strong>Koneksi Internet</strong></td> <td>Ya (via router)</td> <td>Tidak (kecuali ada routing)</td> </tr> <tr> <td><strong>Perangkat Lain</strong></td> <td>Tidak bisa terhubung langsung</td> <td>Bisa terhubung langsung ke ESP32</td> </tr> <tr> <td><strong>Penggunaan</strong></td> <td>Akses internet, komunikasi server</td> <td>Konfigurasi awal, kontrol lokal</td> </tr> <tr> <td><strong>IP Address</strong></td> <td>Dari router (DHCP)</td> <td>Default 192.168.4.1</td> </tr> </tbody> </table>
 
 3. Jelaskan risiko keamanan apabila password Access Point tidak diberikan atau terlalu 
 sederhana!
