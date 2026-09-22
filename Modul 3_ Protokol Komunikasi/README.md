@@ -1,176 +1,105 @@
 # Pertemuan 3
 
-## 3.5.4 Percobaan 3A: Komunikasi Serial (UART)
+## 3.5.4 Percobaan 3A: Komunikasi Data Menggunakan HTTP
 
-1. Jelaskan proses dari input keyboard hingga LED menyala/mati!
+1. Gambarkan diagram alur (flowchart) proses pengiriman data melalui HTTP POST pada program di atas!
 
-> User mengetik karakter di Serial Monitor Arduino IDE, kemudian menekan enter. Komputer mengirimkan karakter tersebut melalui kabel USB ke Arduino. Di dalam loop(), Serial.available() mendeteksi adanya data (bernilai >0). char data = Serial.read() membaca satu karakter. Program membandingkan data dengan '1' atau '0'. Jika cocok, digitalWrite(PIN_LED, HIGH/LOW) mengubah status LED. Arduino mengirim balasan "LED ON" atau "LED OFF" ke Serial Monitor sebagai konfirmasi.
+![alt text](flowchart_3A.png)
 
-2. Mengapa digunakan Serial.available() sebelum membaca data? Apa yang terjadi jika baris tersebut dihilangkan?
+2. Apa fungsi dari perintah http.addHeader("Content-Type", "application/json") pada program tersebut?
 
-> Serial.available() digunakan untuk mengecek apakah ada data yang masuk ke buffer serial. Jika tidak ada, program tidak perlu membaca karena Serial.read() akan mengembalikan nilai -1 yang dapat menyebabkan error logika sehingga program menjadi tidak efisien (banyak pembacaan percuma).
+> Perintah ini berfungsi untuk menambahkan header pada request HTTP yang akan dikirim. Header Content-Type: application/json memberitahu server bahwa body dari request yang dikirim memiliki format JSON. Dengan demikian, server dapat memproses data tersebut dengan benar sesuai formatnya. Jika header ini tidak disertakan, server mungkin akan memperlakukan body sebagai teks biasa atau format lain sehingga data JSON tidak dapat diparsing dengan optimal.
 
-3. Modifikasi program agar LED berkedip (blink) ketika menerima input '2' dengan kondisi jika ‘2’ aktif maka LED akan terus berkedip sampai perintah selanjutnya diberikan!
+3. Jelaskan arti dari kode response HTTP 200 dan sebutkan salah satu contoh kode response HTTP lain beserta artinya!
 
-```c++
-// Modifikasi 3A: LED berkedip saat input '2', berhenti saat input '0'
-#include <Arduino.h>
+> Kode response HTTP 200 berarti "OK", yaitu server berhasil menerima, memahami, dan memproses request yang dikirim oleh klien. Ini adalah kode response yang paling umum menandakan keberhasilan. Contoh kode response lain adalah HTTP 404 yang berarti "Not Found", yaitu server tidak dapat menemukan sumber daya yang diminta pada URL tertentu. Kode 404 biasanya muncul ketika endpoint yang diakses tidak tersedia atau salah penulisan. 
 
-const int PIN_LED = 12;
-bool blinkMode = false;   // status mode berkedip
-unsigned long previousMillis = 0;
-const long interval = 500; // jeda 500ms
-bool ledState = false;
+4. Modifikasi program agar ESP32 dapat mengirimkan data tambahan berupa waktu (dalam milidetik sejak dinyalakan menggunakan millis()) ke dalam JSON yang dikirim, dan berikan penjelasan di setiap baris kode yang ditambahkan dalam bentuk README.md.
+
+ ```c++
+#include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
+#include <WiFiClientSecureBearSSL.h>
+#include <ArduinoJson.h>
+
+const char* ssid = "OPPO A31";
+const char* password = "12345678";
+const char* serverUrl = "https://httpbin.org/post";
 
 void setup() {
-    Serial.begin(9600);
-    Serial.println("Ketik '1' (ON), '0' (OFF), '2' (BLINK)");
-    pinMode(PIN_LED, OUTPUT);
+  Serial.begin(115200);
+  WiFi.begin(ssid, password);
+  Serial.print("Menghubungkan ke WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+  Serial.println("WiFi berhasil terhubung!");
 }
 
 void loop() {
-    // Baca perintah dari serial
-    if (Serial.available() > 0) {
-        char data = Serial.read();
-        if (data == '1') {
-            blinkMode = false;
-            digitalWrite(PIN_LED, HIGH);
-            Serial.println("LED ON");
-        }
-        else if (data == '0') {
-            blinkMode = false;
-            digitalWrite(PIN_LED, LOW);
-            Serial.println("LED OFF");
-        }
-        else if (data == '2') {
-            blinkMode = true;
-            Serial.println("BLINK MODE ON");
-        }
-        else if (data != '\n' && data != '\r') {
-            Serial.println("Perintah tidak dikenal");
-        }
+  if (WiFi.status() == WL_CONNECTED) {
+    std::unique_ptr<BearSSL::WiFiClientSecure> client(
+      new BearSSL::WiFiClientSecure
+    );
+    client->setInsecure();
+    HTTPClient http;
+
+    if (http.begin(*client, serverUrl)) {
+      http.addHeader("Content-Type", "application/json");
+
+      // Membuat objek data sensor dalam format JSON
+      JsonDocument doc;
+      doc["suhu"] = 28.5;
+      doc["kelembaban"] = 65.0;
+
+      // ===== BARIS TAMBAHAN: menyertakan waktu millis() =====
+      // Ambil waktu sejak perangkat dinyalakan dalam milidetik
+      unsigned long waktuMillis = millis();
+      // Tambahkan field waktu ke dalam objek JSON
+      doc["waktu_ms"] = waktuMillis;
+      // ========================================================
+
+      String requestBody;
+      serializeJson(doc, requestBody);
+
+      Serial.print("Mengirim data: ");
+      Serial.println(requestBody);
+
+      int httpResponseCode = http.POST(requestBody);
+
+      if (httpResponseCode > 0) {
+        Serial.print("Kode Response HTTP: ");
+        Serial.println(httpResponseCode);
+        Serial.println("Isi Response:");
+        Serial.println(http.getString());
+      } else {
+        Serial.print("Pengiriman gagal, kode error: ");
+        Serial.println(httpResponseCode);
+      }
+      http.end();
+    } else {
+      Serial.println("Gagal memulai koneksi HTTP");
     }
-    
-    // Jika mode blink aktif, lakukan kedip tanpa delay() blocking
-    if (blinkMode) {
-        unsigned long currentMillis = millis();
-        if (currentMillis - previousMillis >= interval) {
-            previousMillis = currentMillis;
-            ledState = !ledState;
-            digitalWrite(PIN_LED, ledState);
-        }
-    }
+  }
+  delay(10000);
 }
-```
+   ```
 
-4. Tentukan apakah menggunakan delay() atau milis()! Jelaskan pengaruhnya terhadap sistem!
-
-> Pada modifikasi ini digunakan millis(), bukan delay(). Alasannya dikarenakan sistem tesrebut bersifat non-blocking. Program tetap bisa membaca input serial sambil menghitung waktu yang berlalu. Setiap loop, program mengecek apakah sudah waktunya mengganti status LED tanpa menghentikan eksekusi. Sehingga menjadi lebih responsif terhadap input dari pengguna. Cocok untuk aplikasi yang memerlukan pemrosesan paralel seperti membaca sensor, menerima perintah, dan menggerakkan aktuator secara bersamaan.
-
-## 3.6.4 Percobaan 3B: Inter-Integrated Circuit (I2C)
-
-1. Jelaskan bagaimana cara kerja komunikasi I2C antara Arduino dan LCD pada rangkaian tersebut!
-
-> Hanya terdapat dua kabel: SDA (data) dan SCL (clock). Arduino mengirimkan alamat slave (0x27) terlebih dahulu untuk "memanggil" LCD. Setelah LCD merespon dengan acknowledge (ACK), Arduino mengirimkan perintah atau data (misal inisialisasi, set kursor, karakter). Library LiquidCrystal_I2C.h menyembunyikan detail ini. Fungsi lcd.print() akan mengirimkan data karakter ke alamat 0x27 melalui bus I2C. Karena I2C adalah protokol sinkron, clock (SCL) diatur oleh Arduino agar kedua perangkat sinkron. Keuntungan: dengan 2 kabel, bisa dihubungkan banyak slave (masing-masing dengan alamat unik).
-
-2. Apakah pin potensiometer harus seperti itu? Jelaskan apa yang terjadi apabila pin kiri dan pin kanan tertukar!
-
-> Potensiometer tetap berfungsi, tetapi arah putaran menjadi terbalik. Artinya, jika diputar searah jarum jam biasanya nilai ADC naik (0→1023), setelah tertukar akan turun (1023→0). Secara teknis tidak merusak, hanya membalik skala. Nilai maksimum dan minimum tetap sama (0 dan 1023). Untuk aplikasi yang menginginkan arah tertentu (misal kanan = naik), perlu disesuaikan.
-
-3. Modifikasi program dengan menggabungkan antara UART dan I2C (keduanya sebagai
-output) sehingga:
-- Data tidak hanya ditampilkan di LCD tetapi juga di Serial Monitor
-- Adapun data yang ditampilkan pada Serial Monitor sesuai dengan table berikut:
-
-   | ADC: 0 | Volt: 0.00V | Persen: 0% |
-   | ------ | ----------- | ---------- |
-  
-Tampilan jika potensiometer dalam kondisi diputar paling kiri
-- ADC: 0 0% | setCursor(0, 0) dan Bar (level) | setCursor(0, 1)
-- Berikan penjelasan disetiap baris kode nya dalam bentuk README.md!
-
-```c++
-// Modifikasi 3B: Tampilan ke Serial Monitor dan LCD dengan format rapi
-#include <Wire.h>
-#include <LiquidCrystal_I2C.h>
-#include <Arduino.h>
-
-LiquidCrystal_I2C lcd(0x27, 16, 2);
-const int pinPot = A0;
-
-void setup() {
-    Serial.begin(9600);
-    lcd.init();
-    lcd.backlight();
-}
-
-void loop() {
-    int nilaiADC = analogRead(pinPot);
-    if (nilaiADC < 1) nilaiADC = 1;   // hindari pembagian nol (opsional)
-    
-    float tegangan = (nilaiADC / 1023.0) * 5.0;
-    int persen = map(nilaiADC, 0, 1023, 0, 100);
-    
-    // --- Serial Monitor format sesuai tabel (UART) ---
-    Serial.print("ADC: ");
-    Serial.print(nilaiADC);
-    Serial.print(" Volt: ");
-    Serial.print(tegangan, 2);
-    Serial.print(" V Persen: ");
-    Serial.print(persen);
-    Serial.println("%");
-    
-    // --- LCD baris 1: "ADC: nilai persen%" (I2C) ---
-    lcd.setCursor(0, 0);
-    lcd.print("ADC: ");
-    lcd.print(nilaiADC);
-    lcd.print(" ");
-    lcd.print(persen);
-    lcd.print("%   ");   // hapus sisa karakter
-    
-    // --- LCD baris 2: bar grafis (I2C) ---
-    int panjangBar = map(nilaiADC, 0, 1023, 0, 16);
-    lcd.setCursor(0, 1);
-    for (int i = 0; i < 16; i++) {
-        if (i < panjangBar) {
-            lcd.print((char)255);   // blok
-        } else {
-            lcd.print(" ");
-        }
-    }
-    
-    delay(200);
-}
-```
-
-4. Lengkapi tabel berikut berdasarkan pengamatan pada Serial Monitor
+> Baris pertama yang ditambahkan adalah unsigned long waktuMillis = millis(); yang berfungsi untuk mengambil nilai waktu saat ini sejak perangkat dinyalakan dalam satuan milidetik. Tipe data unsigned long digunakan karena nilai millis() dapat membesar dan melebihi kapasitas tipe int pada umumnya. Baris kedua yang ditambahkan adalah doc["waktu_ms"] = waktuMillis; yang berfungsi untuk menambahkan pasangan key-value baru ke dalam objek JSON dengan key bernama waktu_ms dan value berupa nilai waktu yang telah diambil. Dengan penambahan ini, payload JSON yang dikirim ke server akan berisi tiga field yaitu suhu, kelembaban, dan waktu_ms. Hal ini memungkinkan server atau penerima data untuk mengetahui kapan tepatnya data tersebut dikirim relatif terhadap waktu perangkat dinyalakan.
 
 
-| ADC | Volt (V) | Persen (%) |
-| --- | -------- | ---------- |
-| 1   | 0.00     | 0%         |
-| 21  | 0.10     | 2%         |
-| 49  | 0.24     | 4%         |
-| 74  | 0.36     | 7%         |
-| 96  | 0.47     | 9%         |
+## 3.6.4 Percobaan 3B: Komunikasi MQTT
 
-# Dokumentasi
+1. Apa fungsi dari topic pada protokol MQTT, dan mengapa topic yang digunakan perlu dibuat unik?
 
-1. Percobaan 3A: Komunikasi Serial (UART)
+> ESP32 menggunakan alamat IP default 192.168.4.1 untuk mode Access Point karena konfigurasi bawaan dari library WiFi.h. Alamat ini termasuk dalam range IP privat (192.168.x.x) yang umum digunakan untuk jaringan lokal. Tujuannya agar perangkat lain yang terhubung ke AP ESP32 mendapatkan IP dalam subnet yang sama (misalnya 192.168.4.x) dan dapat berkomunikasi dengan ESP32.
 
-![Gambar 1](Dokumentasi_Percobaan_3A_I.jpg)
-![Gambar 2](Dokumentasi_Percobaan_3A_II.jpg)
-![Gambar 3](Dokumentasi_Percobaan_3A_III.jpg)
+2. Jelaskan fungsi dari perintah client.loop() yang dipanggil pada setiap iterasi loop()!
 
-2. Percobaan 3B: Inter-Integrated Circuit (I2C)
+> Perintah client.loop() berfungsi untuk memproses semua aktivitas yang berkaitan dengan koneksi MQTT, termasuk mempertahankan koneksi ke broker, memeriksa pesan yang masuk, serta mengirimkan pesan yang tertunda. Fungsi ini harus dipanggil secara berkala di dalam loop utama agar koneksi MQTT tetap aktif dan responsif. Jika client.loop() tidak dipanggil secara teratur, koneksi ke broker dapat terputus karena broker menganggap klien sudah tidak aktif lagi. Selain itu, pesan-pesan yang masuk dari broker juga tidak akan diproses tanpa pemanggilan fungsi ini.
 
-![Gambar 1](Dokumentasi_Percobaan_3B_I.jpg)
-![Gambar 2](Dokumentasi_Percobaan_3B_II.jpg)
+3. Apa yang akan terjadi apabila koneksi ke broker MQTT terputus di tengah program berjalan?
 
-2. Hasil Output Percobaan 3B (No.4)
-
-![ACD 1](Hasil_Dokumentasi_Percobaan_3B_(ACD=1).png)
-![ACD 21](Hasil_Dokumentasi_Percobaan_3B_(ACD=21).png)
-![ACD 49](Hasil_Dokumentasi_Percobaan_3B_(ACD=49).png)
-![ACD 74](Hasil_Dokumentasi_Percobaan_3B_(ACD=74).png)
-![ACD 96](Hasil_Dokumentasi_Percobaan_3B_(ACD=96).png)
+> Apabila koneksi ke broker MQTT terputus di tengah program berjalan, maka proses publish data tidak akan berhasil dan data tidak akan sampai ke subscriber. Pada program yang telah dibuat, sudah terdapat mekanisme penanganan yang memeriksa status koneksi melalui client.connected(). Jika terputus, program akan memanggil fungsi hubungkan MQTT() untuk mencoba menghubungkan ulang ke broker. Selama proses reconnect, program akan mencetak pesan "Menghubungkan ke broker MQTT..." dan mencoba terus menerus hingga berhasil. Setelah koneksi pulih, proses publish data akan dilanjutkan kembali secara normal. Tanpa mekanisme ini, program akan tetap mencoba mengirim data meskipun koneksi sudah terputus, sehingga data akan hilang tanpa peringatan.
